@@ -1,0 +1,13 @@
+{
+  "Plugin-Class": "com.crazyhacks.music.CrazyMusicPlugin",
+  "Name": "${project.plugin_name}",
+  "Version": "${project.plugin_version}",
+  "Description": "Now playing HUD (Spotify, Apple Music, YouTube...) with cover, progress bar and play/pause, next, previous. Made by lurda55",
+  "URL": "https://github.com/lurda55/crazymusic-rusherhack",
+  "Authors": [
+    "lurda55"
+  ],
+  "Minecraft-Versions": [
+    "${project.minecraft_version}"
+  ]
+}

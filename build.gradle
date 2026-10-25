@@ -1,0 +1,85 @@
+plugins {
+	id 'java'
+	id 'fabric-loom' version '1.14-SNAPSHOT'
+}
+
+version = project.plugin_version
+group = project.maven_group
+base {
+	archivesName = project.plugin_name
+}
+
+configurations {
+	rusherhackApi
+	compileOnly.extendsFrom(rusherhackApi)
+}
+
+repositories {
+	maven {
+		name = "rusherhack"
+		url = "https://maven.rusherhack.org/snapshots"
+	}
+	maven {
+		name = 'ParchmentMC'
+		url = 'https://maven.parchmentmc.org'
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+
+	//mojmap + parchment mappings
+	mappings loom.layered() {
+		officialMojangMappings()
+		parchment("org.parchmentmc.data:parchment-${project.parchment_version}@zip")
+	}
+
+	//rusherhack api
+	rusherhackApi "org.rusherhack:rusherhack-api:$minecraft_version-SNAPSHOT"
+}
+
+// RusherHack's access widener has to be copied out of the api jar once ("gradlew updateAccessWidener") before building
+tasks.register('updateAccessWidener', Copy) {
+	group = "build"
+	outputs.upToDateWhen { false }
+	from(zipTree(configurations.rusherhackApi.singleFile).matching { include "rusherhack.accesswidener" })
+	into(file("build/tmp/" + project.minecraft_version))
+}
+
+loom {
+	def accessWidenerFile = file("build/tmp/${project.minecraft_version}/rusherhack.accesswidener")
+	if (accessWidenerFile.exists()) {
+		accessWidenerPath = accessWidenerFile
+	} else {
+		println("RUSHERHACK ACCESS WIDENER NOT FOUND. Please run the 'updateAccessWidener' task.")
+	}
+	runConfigs.configureEach {
+		ideConfigGenerated = false
+	}
+}
+
+def targetJavaVersion = project.java_version
+
+java {
+	sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
+	targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	it.options.release = Integer.parseInt(targetJavaVersion)
+}
+
+processResources {
+	inputs.property "version", project.version
+	filesMatching("rusherhack-plugin.json") {
+		expand(project: project)
+	}
+}
+
+jar {
+	manifest {
+		attributes("Minecraft-Version": project.minecraft_version)
+	}
+}
